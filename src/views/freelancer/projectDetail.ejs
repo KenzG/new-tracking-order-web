@@ -1,0 +1,575 @@
+<div class="max-w-5xl mx-auto py-10 px-6">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- left column: project info + orders (wider) -->
+    <div class="md:col-span-2">
+      <div class="md:sticky md:top-20">
+        <div class="bg-light card-border rounded-lg p-6 mb-8 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-900"><%= project.title %></h1>
+              <p class="text-slate-600 mt-1"><%= project.description || 'No description' %></p>
+            </div>
+            <div>
+              <a href="/" class="text-teal hover:underline text-sm">&larr; Dashboard</a>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 text-sm text-slate-600">
+            <div>Client: <strong><%= project.clientName || 'N/A' %></strong></div>
+            <% if (project.deadline) { %>
+              <div>Deadline: <strong><%= new Date(project.deadline).toLocaleDateString() %></strong></div>
+            <% } %>
+            <% if (project.accessToken) { %>
+              <div>Link: <a id="client-link" href="/client/<%= project.accessToken %>" class="text-teal hover:underline">Client access link</a></div>
+            <% } %>
+          </div>
+          <div class="flex gap-3 items-center mt-4">
+            <form class="ajax-token" action="/projects/<%= project.id %>/token/regenerate" method="post" data-confirm="Regenerate client token? This will invalidate the previous link.">
+              <button type="submit" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition text-sm">Regenerate Token</button>
+            </form>
+            <form class="ajax-token" action="/projects/<%= project.id %>/token/revoke" method="post" data-confirm="Revoke client token? This will disable client access link.">
+              <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm">Revoke Token</button>
+            </form>
+            <% if (project.accessToken) { %>
+              <p class="text-xs text-slate-500 ml-3">
+                Current: <span id="current-token-hidden" class="font-mono">••••••••••</span>
+                <button id="reveal-token" class="ml-1 text-blue-500 text-xs hover:underline">show</button>
+              </p>
+              <input type="text" id="current-token" value="<%= project.accessToken %>" class="sr-only" readonly />
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <% if (project.orders && project.orders.length > 0) { %>
+        <div class="space-y-4 mt-6">
+        <% project.orders.forEach(order => { %>
+          <div class="order-item bg-white rounded-lg p-4 border border-slate-200 shadow hover:shadow-md transition" data-order-id="<%= order.id %>">
+            <!-- Image Preview -->
+            <% if (order.filePath) { %>
+              <img src="<%= order.filePath %>" alt="<%= order.title %>" class="w-full max-h-64 object-cover rounded-md border border-slate-200 mb-4" />
+            <% } %>
+            
+            <!-- Display Mode: Title, Notes and client comment -->
+            <div class="display-mode mb-4">
+              <h3 class="font-medium text-slate-900"><%= order.title || 'Untitled Deliverable' %></h3>
+              <p class="text-slate-600 text-sm mt-1"><%= order.notes || 'No notes' %></p>
+              <% if (order.filePath) { %>
+                <p class="text-sm text-teal-600 mt-1">✓ File uploaded</p>
+              <% } %>
+              <% if (order.clientComment) { %>
+                <p class="mt-2 text-sm text-indigo-700 bg-indigo-100 p-2 rounded client-comment">Client: <%= order.clientComment %></p>
+              <% } %>
+              <button type="button" class="edit-order-btn mt-2 px-3 py-1 bg-teal-500 text-white rounded hover:bg-teal-600 transition text-sm">Edit</button>
+            </div>
+            
+            <!-- Edit Mode: Form (hidden by default) -->
+            <form class="ajax-edit-form edit-mode hidden mb-4" action="/projects/<%= project.id %>/orders/<%= order.id %>/edit" method="post">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input type="text" name="title" value="<%= order.title || '' %>" required class="w-full rounded-md border border-slate-300 p-2 shadow-sm focus:border-teal-500 focus:ring-teal-500" />
+              </div>
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <textarea name="notes" rows="3" class="w-full rounded-md border border-slate-300 p-2 shadow-sm focus:border-teal-500 focus:ring-teal-500"><%= order.notes || '' %></textarea>
+              </div>
+              <div class="flex gap-2">
+                <button type="submit" class="px-4 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 transition text-sm">Save</button>
+                <button type="button" class="cancel-edit-btn px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-500 transition text-sm">Cancel</button>
+              </div>
+            </form>
+            
+            <!-- Status, Upload, Delete Controls -->
+            <div class="flex flex-wrap gap-3 items-center mt-4">
+              <!-- Status Update -->
+              <form class="ajax-status" action="/projects/<%= project.id %>/orders/<%= order.id %>/status" method="post" data-order-id="<%= order.id %>">
+                <select name="status" class="rounded-md border border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-sm">
+                  <% ['PENDING','IN_PROGRESS','COMPLETED','CANCELLED','APPROVED'].forEach(s => { %>
+                    <option value="<%= s %>" <%= order.status===s ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+                  <% }) %>
+                </select>
+                <button type="submit" class="ml-1 px-2 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 transition text-sm">Update</button>
+              </form>
+              
+              <!-- File Upload -->
+              <form class="ajax-upload" action="/projects/<%= project.id %>/orders/<%= order.id %>/upload" method="post" enctype="multipart/form-data" data-order-id="<%= order.id %>">
+                <label class="cursor-pointer px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm" title="Upload or replace file">
+                  <input type="file" name="file" accept="image/*" class="hidden" />
+                  <span><%= order.filePath ? 'Replace File' : 'Upload File' %></span>
+                </label>
+              </form>
+              
+              <!-- Delete -->
+              <form class="ajax-delete" action="/projects/<%= project.id %>/orders/<%= order.id %>/delete" method="post" data-confirm="Delete this deliverable?" data-order-id="<%= order.id %>" style="display: inline;">
+                <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm">Delete</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="text-slate-600">No deliverables yet. Use the form on the right to add one.</p>
+    <% } %>
+
+    </div> <!-- close left column content -->
+    
+    <!-- right column: compact create form -->
+    <div class="md:col-span-1">
+      <div class="md:sticky md:top-20 flex items-start">
+        <div class="w-full max-w-xs bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">New Deliverable</h3>
+          <form action="/projects/<%= project.id %>/orders" method="post" class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700">Title</label>
+              <input name="title" required class="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700">Notes (optional)</label>
+          <textarea name="notes" rows="2" class="mt-1 block w-full rounded-md border border-slate-300 p-2 shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea>
+        </div>
+        <button type="submit" class="px-5 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition">Create Deliverable</button>
+      </form>
+      <p class="text-xs text-slate-500 mt-2">You can upload a file after creating the deliverable.</p>
+    </div>
+    </div> <!-- end right column -->
+  </div> <!-- end grid -->
+</div>
+<!-- Confirmation modal -->
+<div id="confirm-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+    <p id="confirm-message" class="text-slate-700 mb-4"></p>
+    <div class="flex justify-end gap-2">
+      <button id="confirm-cancel" class="px-4 py-2 bg-slate-300 rounded hover:bg-slate-400">Cancel</button>
+      <button id="confirm-ok" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // reveal/hide token
+  const revealBtn = document.getElementById('reveal-token');
+  if (revealBtn) {
+    revealBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const hidden = document.getElementById('current-token-hidden');
+      const real = document.getElementById('current-token');
+      if (hidden && real) {
+        if (hidden.textContent.includes('•')) {
+          hidden.textContent = real.value;
+          revealBtn.textContent = 'copy';
+        } else if (revealBtn.textContent === 'copy') {
+          navigator.clipboard.writeText(real.value);
+          revealBtn.textContent = 'copied';
+          setTimeout(() => { revealBtn.textContent = 'copy'; }, 1500);
+        }
+      }
+    });
+  }
+
+  // Toggle Edit Mode
+  document.querySelectorAll('.edit-order-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const orderItem = btn.closest('.order-item');
+      orderItem.querySelector('.display-mode').classList.add('hidden');
+      const editForm = orderItem.querySelector('.edit-mode');
+      editForm.classList.remove('hidden');
+      editForm.querySelector('input[name="title"]').focus();
+    });
+  });
+
+  // Cancel Edit Mode
+  document.querySelectorAll('.cancel-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const orderItem = btn.closest('.order-item');
+      orderItem.querySelector('.display-mode').classList.remove('hidden');
+      orderItem.querySelector('.edit-mode').classList.add('hidden');
+    });
+  });
+
+  // Handle ajax-edit-form submission
+  document.querySelectorAll('form.ajax-edit-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      
+      try {
+        // convert form fields to URL-encoded format so Express can parse
+        const formData = new FormData(form);
+        const urlParams = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+          urlParams.append(key, value);
+        }
+
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: urlParams,
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        const data = await response.json();
+        if (data.status === 'ok') {
+          // Update display mode with new values
+          const titleInput = form.querySelector('input[name="title"]');
+          const notesTextarea = form.querySelector('textarea[name="notes"]');
+          const displayMode = form.closest('.order-item').querySelector('.display-mode');
+          displayMode.querySelector('h3').textContent = titleInput.value || 'Untitled Deliverable';
+          displayMode.querySelector('p').textContent = notesTextarea.value || 'No notes';
+          
+          // Switch back to display mode
+          form.closest('.order-item').querySelector('.display-mode').classList.remove('hidden');
+          form.classList.add('hidden');
+          
+          // Show temporary 'Saved' text
+          submitBtn.textContent = 'Saved';
+          setTimeout(() => {
+            submitBtn.textContent = originalText;
+          }, 1500);
+        } else {
+          alert('Error: ' + (data.message || 'Failed to save'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+  });
+
+  // helper to show confirmation modal
+  function showConfirm(message) {
+    return new Promise(resolve => {
+      const modal = document.getElementById('confirm-modal');
+      const msgEl = document.getElementById('confirm-message');
+      const okBtn = document.getElementById('confirm-ok');
+      const cancelBtn = document.getElementById('confirm-cancel');
+
+      msgEl.textContent = message;
+      modal.classList.remove('hidden');
+
+      const cleanup = () => {
+        okBtn.removeEventListener('click', okHandler);
+        cancelBtn.removeEventListener('click', cancelHandler);
+        modal.classList.add('hidden');
+      };
+      const okHandler = () => { cleanup(); resolve(true); };
+      const cancelHandler = () => { cleanup(); resolve(false); };
+
+      okBtn.addEventListener('click', okHandler);
+      cancelBtn.addEventListener('click', cancelHandler);
+    });
+  }
+
+  // Handle ajax-delete forms
+  document.querySelectorAll('form.ajax-delete').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const confirmMsg = form.getAttribute('data-confirm');
+      if (confirmMsg) {
+        const ok = await showConfirm(confirmMsg);
+        if (!ok) return;
+      }
+      
+      const orderId = form.getAttribute('data-order-id');
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.status === 'ok') {
+          // Remove the DOM element with matching data-order-id
+          const element = document.querySelector(`[data-order-id="${orderId}"]`);
+          if (element) element.remove();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to delete'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+  });
+
+  // Handle ajax-status forms
+  document.querySelectorAll('form.ajax-status').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      
+      try {
+        // use URL-encoded data so Express can parse it (avoid multipart/form-data)
+        const formData = new FormData(form);
+        const urlParams = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+          urlParams.append(key, value);
+        }
+
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: urlParams,
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        const data = await response.json();
+        if (data.status === 'ok') {
+          // Show temporary 'Saved' text
+          submitBtn.textContent = 'Saved';
+          setTimeout(() => {
+            submitBtn.textContent = originalText;
+          }, 1500);
+        } else {
+          alert('Error: ' + (data.message || 'Failed to update status'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+  });
+
+  // Handle ajax-token forms
+  document.querySelectorAll('form.ajax-token').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const confirmMsg = form.getAttribute('data-confirm');
+      if (confirmMsg) {
+        const ok = await showConfirm(confirmMsg);
+        if (!ok) return;
+      }
+      
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.status === 'ok') {
+          // Reload the page
+          location.reload();
+        } else {
+          alert('Error: ' + (data.message || 'Failed'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+  });
+
+  // Handle ajax-upload forms (file upload)
+  document.querySelectorAll('form.ajax-upload').forEach(form => {
+    const fileInput = form.querySelector('input[type="file"]');
+    const label = form.querySelector('label');
+    
+    fileInput.addEventListener('change', async (e) => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      
+      // validate size
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('Image too large; max 5MB.');
+        fileInput.value = '';
+        return;
+      }
+      // validate dimensions
+      const checkDims = () => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(img.src);
+          if (img.width > 2000 || img.height > 2000) {
+            reject(new Error('Image dimensions must be <= 2000px')); 
+          } else resolve();
+        };
+        img.onerror = () => reject(new Error('Unable to read image'));
+        img.src = URL.createObjectURL(file);
+      });
+      try {
+        await checkDims();
+      } catch (dimErr) {
+        alert(dimErr.message);
+        fileInput.value = '';
+        return;
+      }
+      
+      const orderId = form.getAttribute('data-order-id');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const originalText = label.querySelector('span').textContent;
+        label.querySelector('span').textContent = 'Uploading...';
+        label.classList.add('opacity-50');
+        
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        if (data.status === 'ok') {
+          const filePath = data.filePath;
+          const orderItem = form.closest('.order-item');
+
+          // update existing image or create a new one at the top
+          let img = orderItem.querySelector('img');
+          if (img) {
+            img.src = filePath + '?t=' + Date.now();
+            img.classList.remove('hidden');
+          } else {
+            img = document.createElement('img');
+            img.src = filePath + '?t=' + Date.now();
+            img.alt = orderItem.querySelector('.display-mode h3') ? orderItem.querySelector('.display-mode h3').textContent : '';
+            img.className = 'w-full max-h-64 object-cover rounded-md border border-slate-200 mb-4';
+            orderItem.insertBefore(img, orderItem.firstChild);
+          }
+
+          // ensure display shows a "file uploaded" note
+          const displayMode = orderItem.querySelector('.display-mode');
+          if (displayMode) {
+            let fileNote = displayMode.querySelector('.file-note');
+            if (!fileNote) {
+              fileNote = document.createElement('p');
+              fileNote.className = 'text-sm text-teal-600 mt-1 file-note';
+              displayMode.appendChild(fileNote);
+            }
+            fileNote.textContent = '✓ File uploaded';
+          }
+
+          label.querySelector('span').textContent = 'File uploaded ✓';
+          setTimeout(() => {
+            label.querySelector('span').textContent = 'Replace File';
+            label.classList.remove('opacity-50');
+            fileInput.value = ''; // Reset input
+          }, 1500);
+        } else {
+          alert('Upload error: ' + (data.message || 'Failed'));
+          label.querySelector('span').textContent = originalText;
+          label.classList.remove('opacity-50');
+        }
+      } catch (error) {
+        alert('Upload error: ' + error.message);
+        label.querySelector('span').textContent = originalText;
+        label.classList.remove('opacity-50');
+      }
+    });
+  });
+
+  // Toast notification system
+  const toastContainer = document.createElement('div');
+  toastContainer.id = 'toast-container';
+  toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+  document.body.appendChild(toastContainer);
+
+  function showToast(message, type = 'info', duration = 4000) {
+    const toast = document.createElement('div');
+    const bgClass = type === 'success' ? 'bg-green-500' : type === 'warning' ? 'bg-amber-500' : 'bg-blue-500';
+    toast.className = `${bgClass} text-white px-4 py-3 rounded shadow-lg max-w-xs animate-pulse`;
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  // polling for client comments, status changes, and file uploads
+  (function() {
+    const projectId = <%= project.id %>;
+    const updateCache = {}; // track previous state to detect changes
+    
+    async function pollUpdates() {
+      try {
+        const res = await fetch(`/projects/${projectId}/orders`);
+        const data = await res.json();
+        if (data.orders) {
+          data.orders.forEach(o => {
+            const item = document.querySelector(`.order-item[data-order-id="${o.id}"]`);
+            if (!item) return;
+            
+            const display = item.querySelector('.display-mode');
+            const cache = updateCache[o.id] || {};
+            let hasChanged = false;
+
+            // Handle comment changes
+            let commentEl = item.querySelector('.client-comment');
+            if (o.clientComment && o.clientComment !== cache.clientComment) {
+              if (!commentEl) {
+                commentEl = document.createElement('p');
+                commentEl.className = 'mt-2 text-sm text-indigo-700 bg-indigo-100 p-2 rounded client-comment';
+                display.appendChild(commentEl);
+              }
+              commentEl.textContent = 'Client: ' + o.clientComment;
+              if (cache.clientComment) hasChanged = true; // only notify on actual change, not initial
+              updateCache[o.id] = { ...cache, clientComment: o.clientComment };
+            } else if (!o.clientComment && commentEl) {
+              commentEl.remove();
+              updateCache[o.id] = { ...cache, clientComment: null };
+            }
+
+            // Handle status changes
+            if (o.status && o.status !== cache.status) {
+              const statusSelect = item.querySelector('select[name="status"]');
+              if (statusSelect) {
+                statusSelect.value = o.status;
+              }
+              updateCache[o.id] = { ...updateCache[o.id], status: o.status };
+              if (cache.status) hasChanged = true;
+            }
+
+            // Handle filePath changes
+            if (o.filePath && o.filePath !== cache.filePath) {
+              let img = item.querySelector('img');
+              if (img) {
+                img.src = o.filePath + '?t=' + Date.now();
+              } else {
+                img = document.createElement('img');
+                img.src = o.filePath + '?t=' + Date.now();
+                img.alt = display.querySelector('h3') ? display.querySelector('h3').textContent : '';
+                img.className = 'w-full max-h-64 object-cover rounded-md border border-slate-200 mb-4';
+                item.insertBefore(img, item.firstChild);
+              }
+              updateCache[o.id] = { ...updateCache[o.id], filePath: o.filePath };
+              if (cache.filePath) hasChanged = true;
+            }
+
+            if (hasChanged) {
+              showToast('Order updated: #' + o.id, 'success');
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('pollUpdates error', e);
+      }
+    }
+
+    // Poll every 5 seconds
+    setInterval(pollUpdates, 5000);
+    pollUpdates();
+
+    // Try to establish SSE connection for real-time updates (graceful fallback to polling if unavailable)
+    try {
+      const eventSource = new EventSource(`/projects/${projectId}/events`);
+      eventSource.addEventListener('order-updated', (e) => {
+        try {
+          const update = JSON.parse(e.data);
+          const item = document.querySelector(`.order-item[data-order-id="${update.orderId}"]`);
+          if (item) {
+            pollUpdates(); // refresh immediately when real-time event arrives
+            showToast('🔔 ' + (update.message || 'Order updated'), 'success', 3000);
+          }
+        } catch (err) {
+          console.warn('SSE parse error', err);
+        }
+      });
+      eventSource.addEventListener('error', () => {
+        console.warn('SSE connection error, relying on polling');
+        eventSource.close();
+      });
+    } catch (e) {
+      console.warn('SSE unavailable, using polling only:', e);
+    }
+  })();
+</script>

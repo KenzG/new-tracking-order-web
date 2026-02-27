@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+            background: linear-gradient(135deg,#f8f9fa 0%,#ffffff 100%);
+            color: #374151;
+        }
+        .bg-light { background: linear-gradient(135deg,#ffffff 0%,#f8f9fa 100%); }
+        .text-teal { color: #0d9488; }
+        .text-emerald { color: #059669; }
+        .text-green { color: #10b981; }
+        .btn-teal { background: #0d9488; color: white; font-weight: 600; }
+        .btn-teal:hover { background: #0f766e; }
+        .card-border { border: 1px solid rgba(13, 148, 136, 0.15); }
+        
+        /* User Dropdown */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            display: none;
+            z-index: 50;
+            margin-top: 0.5rem;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-menu a, .dropdown-menu button {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #374151;
+            transition: background 0.2s;
+        }
+        
+        .dropdown-menu a:hover, .dropdown-menu button:hover {
+            background: #f3f4f6;
+            color: #0d9488;
+        }
+        
+        .dropdown-menu button {
+            color: #dc2626;
+        }
+        
+        .dropdown-menu button:hover {
+            background: #fee2e2;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <% var hideNav = typeof hideNav !== 'undefined' ? hideNav : false; %>
+
+    <!-- HEADER NAV -->
+    <% if (!hideNav) { %>
+    <header class="sticky top-0 z-40 bg-light border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">◆</div>
+                <div>
+                    <span class="text-xl font-bold text-teal-600">OrderTrack</span>
+                    <p class="text-slate-400 text-xs">Freelancer Platform</p>
+                </div>
+            </div>
+            <nav class="flex items-center gap-8">
+                <a href="/" class="text-slate-600 font-medium hover:text-teal-600 transition">Dashboard</a>
+                <div class="relative">
+                    <button id="user-menu-btn" class="w-10 h-10 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg flex items-center justify-center text-white text-sm font-bold hover:shadow-lg transition cursor-pointer">F</button>
+                    <div id="user-dropdown" class="dropdown-menu">
+                        <a href="/profile" class="flex items-center gap-2">
+                            <span>👤</span> Profile
+                        </a>
+                        <a href="/settings" class="flex items-center gap-2">
+                            <span>⚙️</span> Settings
+                        </a>
+                        <hr class="my-1 border-slate-200">
+                        <button id="logout-btn" class="flex items-center gap-2">
+                            <span>🚪</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <% } %>
+
+    <!-- MAIN CONTENT -->
+    <main class="min-h-[calc(100vh-70px)]">
+        <%- body %>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-light border-t border-slate-200 mt-16">
+        <div class="max-w-7xl mx-auto px-6 py-8 text-center">
+            <p class="text-slate-500 text-sm">&copy; 2026 OrderTrack. Designed for freelancers.</p>
+        </div>
+    </footer>
+
+    <script>
+        // User dropdown menu toggle
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userDropdown = document.getElementById('user-dropdown');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (userMenuBtn) {
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            if (userDropdown) {
+                userDropdown.classList.remove('show');
+            }
+        });
+
+        // Logout functionality
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    // For now, just show an alert
+                    alert('Logout functionality coming soon!');
+                    // TODO: Later add actual logout endpoint
+                    // location.href = '/logout';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

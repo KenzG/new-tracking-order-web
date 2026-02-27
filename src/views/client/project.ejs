@@ -1,0 +1,87 @@
+<div class="bg-light border-b border-slate-200">
+  <div class="max-w-4xl mx-auto py-10 px-6">
+    <p class="text-slate-600 text-sm uppercase tracking-wide">Project Details</p>
+    <h1 class="text-4xl font-bold text-teal-600 mt-2"><%= project.title %></h1>
+    <p class="text-slate-600 mt-3"><%= project.description || 'No description' %></p>
+    <p class="text-slate-500 text-sm mt-3">
+      Client: <%= project.clientName || project.owner.name %>
+      <% if (project.deadline) { %> | Due: <%= new Date(project.deadline).toLocaleDateString() %><% } %>
+    </p>
+  </div>
+</div>
+
+<div class="max-w-4xl mx-auto py-10 px-6">
+    <!-- client info banner -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
+        <p class="text-yellow-700 text-sm">You are viewing this page via a client link. Feel free to review the files and send comments.</p>
+    </div>
+    <div class="bg-light card-border rounded-lg p-8">
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">📦 Order Tracking</h2>
+        <p class="text-slate-500 mb-4">Click on an image to preview it. You can leave comments or revision requests for each order below.</p>
+
+        <% if (project.orders && project.orders.length > 0) { %>
+            <div class="space-y-6">
+                <% project.orders.forEach((order, index) => { %>
+                    <div class="bg-white rounded-lg p-6 border border-slate-200 hover:shadow-lg transition">
+                        <div class="md:flex md:items-start gap-4">
+                            <% if (order.filePath) { %>
+                                <div class="flex-shrink-0 cursor-pointer order-image" data-src="<%= order.filePath %>">
+                                    <img src="<%= order.filePath %>" alt="deliverable" class="w-40 h-auto rounded" />
+                                </div>
+                            <% } %>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-semibold text-slate-900">
+                                        Order #<%= index + 1 %><%= order.title ? ' – ' + order.title : '' %>
+                                    </h3>
+                                    <% 
+                                        let badgeClass = 'text-slate-700 bg-slate-200 border-slate-300';
+                                        if (order.status === 'APPROVED') badgeClass = 'text-teal-700 bg-teal-100 border-teal-300';
+                                        else if (order.status === 'COMPLETED') badgeClass = 'text-green-700 bg-green-100 border-green-300';
+                                        else if (order.status === 'IN_PROGRESS') badgeClass = 'text-emerald-700 bg-emerald-100 border-emerald-300';
+                                        else if (order.status === 'PENDING') badgeClass = 'text-yellow-700 bg-yellow-100 border-yellow-300';
+                                        else if (order.status === 'CANCELLED') badgeClass = 'text-red-700 bg-red-100 border-red-300';
+                                    %>
+                                    <span class="px-3 py-1 rounded text-sm font-semibold border <%= badgeClass %>">
+                                        <%= order.status %>
+                                    </span>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded border border-slate-200 mb-2">
+                                    <p class="text-slate-600"><%= order.notes || 'No notes yet' %></p>
+                                </div>
+                                <% if (order.clientComment) { %>
+                                    <p class="mt-2 text-sm text-indigo-700 bg-indigo-100 p-2 rounded">Your comment: <%= order.clientComment %></p>
+                                <% } %>
+                                <!-- approve button shown when not yet approved or completed -->
+                                <% if (order.status !== 'APPROVED' && order.status !== 'COMPLETED') { %>
+                                    <button class="approve-btn mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm" data-order-id="<%= order.id %>">Approve</button>
+                                <% } else if (order.status === 'APPROVED') { %>
+                                    <p class="mt-2 text-sm text-green-700">✅ Approved</p>
+                                <% } %>
+                                <form class="client-comment-form mt-4" data-order-id="<%= order.id %>">
+                                    <textarea name="comment" required class="w-full border rounded p-2" placeholder="Leave a revision request or question..." <%= (order.status==='COMPLETED' || order.status==='APPROVED')?'disabled':'' %>><%= order.clientComment || '' %></textarea>
+                                    <button type="submit" class="btn-teal mt-2 w-full max-w-xs py-2 rounded-lg hover:bg-teal-700 font-semibold shadow-lg transition-shadow hover:shadow-xl" <%= (order.status==='COMPLETED' || order.status==='APPROVED')?'disabled':'' %>>Submit comment</button>
+                                </form>
+                                <p class="text-xs text-slate-500 mt-3">
+                                    📅 Created: <%= new Date(order.createdAt).toLocaleDateString() %>
+                                    | Updated: <%= new Date(order.updatedAt).toLocaleDateString() %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <p class="text-slate-500 text-center py-12 text-lg">✨ No orders yet</p>
+        <% } %>
+    </div>
+
+    <!-- image preview modal -->
+    <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <button id="modalClose" class="absolute top-4 right-4 text-white text-3xl leading-none">&times;</button>
+        <div class="bg-white rounded-lg overflow-hidden max-w-xl max-h-full">
+            <img id="modalImg" src="" alt="preview" class="w-full h-auto" />
+        </div>
+    </div>
+
+    <script src="/scripts/client.js"></script>
