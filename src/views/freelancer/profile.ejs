@@ -1,6 +1,9 @@
 <div class="max-w-4xl mx-auto py-16 px-6">
   <div class="bg-light card-border rounded-lg p-8">
-    <h1 class="text-3xl font-bold text-slate-900 mb-8">👤 My Profile</h1>
+    <div class="flex items-center gap-3 mb-8">
+      <svg class="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+      <h1 class="text-3xl font-bold text-slate-900">My Profile</h1>
+    </div>
 
     <div class="space-y-6">
       <!-- Profile Card -->
@@ -19,15 +22,6 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Role</label>
-            <p class="text-lg text-slate-900">
-              <span class="px-3 py-1 rounded-full text-sm font-medium bg-teal-100 text-teal-700">
-                <%= user.role %>
-              </span>
-            </p>
-          </div>
-          
-          <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">Member Since</label>
             <p class="text-lg text-slate-900"><%= new Date(user.createdAt).toLocaleDateString() %></p>
           </div>
@@ -40,14 +34,35 @@
         <p class="text-slate-600 text-sm">More details coming soon...</p>
       </div>
 
-      <!-- Edit Profile Button -->
-      <div class="flex gap-3">
-        <button type="button" class="px-6 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition">
-          Edit Profile
-        </button>
-        <a href="/" class="px-6 py-2 bg-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-400 transition">
-          Back to Dashboard
-        </a>
+      <!-- Edit Profile Form -->
+      <div class="bg-white rounded-lg p-6 border border-slate-200">
+        <div class="flex items-center gap-2 mb-4">
+          <svg class="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM16.243 15.657a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM10 15a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zM5.757 16.243a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM4 10a1 1 0 011 1h1a1 1 0 110-2H5a1 1 0 00-1 1zM4.343 5.757a1 1 0 000 1.414l.707-.707a1 1 0 00-1.414-1.414l-.707.707z"></path></svg>
+          <h2 class="text-xl font-semibold text-slate-900">Edit Profile</h2>
+        </div>
+        <form action="/profile" method="post" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+            <input type="text" name="name" value="<%= user.name || '' %>" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-teal-500 focus:ring-teal-500" placeholder="Enter your name" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+            <div class="flex gap-2">
+              <input type="email" name="email" value="<%= user.email %>" class="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:border-teal-500 focus:ring-teal-500" />
+              <button type="button" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition" title="Update email">Update</button>
+            </div>
+          </div>
+          
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition">
+              Save Changes
+            </button>
+            <a href="/" class="px-6 py-2 bg-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-400 transition">
+              Cancel
+            </a>
+          </div>
+        </form>
       </div>
     </div>
   </div>

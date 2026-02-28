@@ -1,0 +1,45 @@
+<div class="max-w-4xl mx-auto py-12 px-6">
+  <div class="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
+    <div class="flex items-center gap-2 mb-4">
+      <svg class="w-6 h-6 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM18.8 16.3A6.007 6.007 0 0012 15a6.007 6.007 0 00-6.8 1.3M5 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      <h1 class="text-2xl font-bold text-slate-900">Clients / Users</h1>
+    </div>
+    <% if (clients && clients.length) { %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-left text-slate-600">
+            <tr>
+              <th class="px-3 py-2">#</th>
+              <th class="px-3 py-2">Name / Email</th>
+              <th class="px-3 py-2">Projects</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% clients.forEach((c, idx) => { %>
+              <tr class="border-t border-slate-100 align-top">
+                <td class="px-3 py-2"><%= idx + 1 %></td>
+                <td class="px-3 py-2">
+                  <%= c.name || '-' %>
+                  <% if (c.email) { %><br/><span class="text-xs text-slate-500"><%= c.email %></span><% } %>
+                </td>
+                <td class="px-3 py-2">
+                  <% if (c.projects.length) { %>
+                    <ul class="list-disc ml-5 text-xs">
+                      <% c.projects.forEach(p => { %>
+                        <li><%= p.title %> (<a href="/projects/<%= p.id %>" class="text-teal hover:underline text-xs">view</a>)</li>
+                      <% }); %>
+                    </ul>
+                  <% } else { %>
+                    <span class="text-slate-500">-</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="text-slate-600">No client data available yet.</p>
+    <% } %>
+  </div>
+</div>

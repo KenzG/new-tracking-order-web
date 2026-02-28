@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+
+# Environment
+.env
+
+# SQLite database file
+prisma/dev.db
+
+# uploaded files (if you don't want to track them)
+public/uploads/*
+
+# logs
+npm-debug.log*

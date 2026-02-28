@@ -68,6 +68,27 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+// update profile (name and email)
+router.post('/profile', async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await prisma.user.findFirst();
+    if (!user) return res.status(404).send('User not found');
+    
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: name || null,
+        email: email || user.email
+      }
+    });
+    res.redirect('/profile');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
 // settings page
 router.get('/settings', async (req, res) => {
   try {
@@ -78,6 +99,39 @@ router.get('/settings', async (req, res) => {
     console.error(err);
     res.status(500).send('Server error');
   }
+});
+
+// list clients based on projects (ignore freelancer/profile users)
+router.get('/clients', async (req, res) => {
+  try {
+    // fetch projects to derive client info
+    const projects = await prisma.project.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    // build a map of client entries keyed by email or name
+    const clientsMap = {};
+    projects.forEach(p => {
+      const key = p.clientEmail || p.clientName || 'unknown';
+      if (!clientsMap[key]) {
+        clientsMap[key] = {
+          email: p.clientEmail,
+          name: p.clientName,
+          projects: []
+        };
+      }
+      clientsMap[key].projects.push(p);
+    });
+    const clients = Object.values(clientsMap);
+    res.render('freelancer/clients', { clients });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+// simple about page
+router.get('/about', (req, res) => {
+  res.render('about');
 });
 
 // create new project
@@ -346,7 +400,7 @@ router.get('/projects/:id/edit-data', async (req, res) => {
 router.post('/projects/:id/edit', async (req, res) => {
   try {
     const projectId = parseInt(req.params.id);
-    const { title, description, clientName, deadline } = req.body;
+    const { title, description, clientName, clientEmail, deadline } = req.body;
 
     if (!title || title.trim() === '') {
       if (req.accepts('json')) return res.status(400).json({ error: 'Title is required' });
